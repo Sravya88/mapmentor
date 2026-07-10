@@ -1,35 +1,61 @@
-'use client' // ← Add this. We need useState for sorting
+'use client'
 
-import { useState, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation' // ← New import
-import { mockMentors } from '@/lib/mockMentors'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import MentorCard from '@/components/MentorCard'
-import { Subject } from '@/types/mentor'
-import { ArrowUpDown } from 'lucide-react'
+import { Mentor } from '@/types/mentor'
+import { ArrowUpDown, Loader2 } from 'lucide-react'
 
 export default function SearchPage() {
-  const searchParams = useSearchParams() // ← Next.js 15 client way
+  const searchParams = useSearchParams()
   const subject = searchParams.get('subject')
   const area = searchParams.get('area')
   
+  const [mentors, setMentors] = useState<Mentor[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'price'>('distance')
 
-  // useMemo = recalculates only when deps change. Interview keyword.
-  const filteredAndSortedMentors = useMemo(() => {
-    const filtered = mockMentors.filter(mentor => {
-      const matchesSubject = !subject || mentor.subjects.includes(subject as Subject)
-      const matchesArea = !area || mentor.area === area
-      return matchesSubject && matchesArea
-    })
+  // Fetch from API - Day 5 key change
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const params = new URLSearchParams()
+        if (subject) params.set('subject', subject)
+        if (area) params.set('area', area)
+        
+        const res = await fetch(`/api/mentors?${params.toString()}`)
+        
+        if (!res.ok) throw new Error('Failed to fetch mentors')
+        
+        const data = await res.json()
+        setMentors(data.mentors)
+      } catch (err) {
+        setError('Could not load mentors. Try again.')
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    // Sorting logic - this is pure JS, great for interviews
-    return filtered.sort((a, b) => {
+    fetchMentors()
+  }, [subject, area]) // Refetch when URL changes
+
+  // Sort client-side after fetch
+  const sortedMentors = useMemo(() => {
+    return [...mentors].sort((a, b) => {
       if (sortBy === 'distance') return a.distance_km - b.distance_km
-      if (sortBy === 'rating') return b.rating - a.rating // Higher rating first
-      if (sortBy === 'price') return a.rate - b.rate // Lower price first
+      if (sortBy === 'rating') return b.rating - a.rating
+      if (sortBy === 'price') return a.rate - b.rate
       return 0
     })
-  }, [subject, area, sortBy])
+  }, [mentors, sortBy])
+
+  if (loading) return <SearchSkeleton />
+  if (error) return <ErrorState message={error} />
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -41,11 +67,10 @@ export default function SearchPage() {
                 Mentors for {subject || 'All Subjects'} in {area || 'Hyderabad'}
               </h1>
               <p className="text-gray-600 mt-1">
-                {filteredAndSortedMentors.length} mentors found
+                {sortedMentors.length} mentors found
               </p>
             </div>
             
-            {/* Sort dropdown - Day 4 new */}
             <div className="flex items-center gap-2">
               <ArrowUpDown size={18} className="text-gray-500" />
               <select 
@@ -64,13 +89,46 @@ export default function SearchPage() {
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid gap-4">
-          {filteredAndSortedMentors.length > 0 ? (
-            filteredAndSortedMentors.map(mentor => (
+          {sortedMentors.length > 0 ? (
+            sortedMentors.map(mentor => (
               <MentorCard key={mentor.id} mentor={mentor} />
             ))
           ) : (
             <EmptyState subject={subject} area={area} />
           )}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function SearchSkeleton() {
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="animate-spin text-blue-600" size={40} />
+          <span className="ml-3 text-gray-600">Finding mentors...</span>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="text-center py-16 bg-white rounded-xl border border-red-200">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-bold text-gray-900">Something went wrong</h3>
+          <p className="text-gray-600 mt-2">{message}</p>
+          <a 
+            href="/"
+            className="inline-block mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+          >
+            Back to Home
+          </a>
         </div>
       </div>
     </main>
