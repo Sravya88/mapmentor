@@ -1,19 +1,29 @@
-import { mockMentors } from '@/lib/mockMentors'
-import { Star, MapPin, Clock, Award, ArrowLeft } from 'lucide-react'
+'use client'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { Mentor } from '@/types/mentor'
+import { Star, MapPin, ArrowLeft, Award, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 type Props = {
   params: Promise<{ id: string }> // Next.js 15: params is also async
 }
 
-export default async function MentorProfile({ params }: Props) {
-  const { id } = await params
-  const mentor = mockMentors.find(m => m.id === id)
-  
-  if (!mentor) {
-    notFound() // Shows 404 page
-  }
+export default function MentorProfile() {
+  const params = useParams()
+  const [mentor, setMentor] = useState<Mentor | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/mentors/${params.id}`)
+     .then(res => res.json())
+     .then(data => setMentor(data))
+     .finally(() => setLoading(false))
+  }, [params.id])
+
+  if (loading) return <div className="p-8 text-center">Loading...</div>
+  if (!mentor) return <div className="p-8 text-center">Mentor not found</div>
+
 
   return (
     <main className="min-h-screen bg-gray-50">

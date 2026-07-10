@@ -1,28 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mockMentors } from '@/lib/mockMentors'
-import { Area, Subject } from '@/types/mentor'
+import { findMentors } from '@/lib/api/mentors'
+import { Subject, Area } from '@/types/mentor'
 
-// GET /api/mentors?subject=CBSE%20Math&area=Gachibowli
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
-  const subject = searchParams.get('subject')
-  const area = searchParams.get('area')
 
-  // Simulate DB delay so we see loading.tsx
-  await new Promise(resolve => setTimeout(resolve, 500))
+  try {
+    const filters = {
+      subject: searchParams.get('subject') as Subject || undefined,
+      area: searchParams.get('area') as Area || undefined,
+      minRating: searchParams.get('minRating')? Number(searchParams.get('minRating')) : undefined,
+      maxPrice: searchParams.get('maxPrice')? Number(searchParams.get('maxPrice')) : undefined,
+    }
 
-  let filtered = mockMentors
+    const data = await findMentors(filters)
+    return NextResponse.json(data)
 
-  if (subject) {
-    filtered = filtered.filter(m => m.subjects.includes(subject as Subject))
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch mentors' },
+      { status: 500 }
+    )
   }
-  
-  if (area) {
-    filtered = filtered.filter(m => m.area === area)
-  }
-
-  return NextResponse.json({ 
-    mentors: filtered,
-    count: filtered.length 
-  })
 }
