@@ -1,16 +1,25 @@
-export type Area = 'Gachibowli' | 'Hitech City' | 'Madhapur' | 'Kondapur' | 'Kukatpally' | 'Ameerpet' | 'Secunderabad' | 'Jubilee Hills' | 'Miyapur' | 'Dilsukhnagar'
+export type Subject = 
+  | 'CBSE Math' 
+  | 'CBSE Science'  // ← Make sure this line exists
+  | 'JEE Physics'
+  | 'JEE Math'
+  | 'JEE Chemistry'
+  | 'NEET Biology'
+  | 'Coding'
+  | 'English'
+  | 'IELTS'
 
-export type Subject = 'CBSE Math' | 'JEE Physics' | 'NEET Biology' | 'Spoken English' | 'Coding' | 'UPSC' | 'Class 10 Science' | 'Interview Prep'
+export type Area = 'Gachibowli' | 'Kondapur' | 'Madhapur' | 'Hitech City' | 'Dilsukhnagar'
 
 export interface Mentor {
   id: string
   name: string
-  subjects: Subject[]
-  rate: number
-  rating: number
-  distance_km: number
   area: Area
-  ai_match_reason?: string
+  subjects: Subject[]
+  distance_km: number
+  rating: number
+  rate: number
   photo_url: string
   badges: string[]
+  ai_match_reason: string
 }

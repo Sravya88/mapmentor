@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
       area: searchParams.get('area') as Area || undefined,
       minRating: searchParams.get('minRating')? Number(searchParams.get('minRating')) : undefined,
       maxPrice: searchParams.get('maxPrice')? Number(searchParams.get('maxPrice')) : undefined,
+      page: searchParams.get('page')? Number(searchParams.get('page')) : 1, 
+      limit: searchParams.get('limit')? Number(searchParams.get('limit')) : 6 
     }
 
     const data = await findMentors(filters)

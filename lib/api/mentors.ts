@@ -6,12 +6,15 @@ export interface MentorFilters {
   area?: Area
   minRating?: number
   maxPrice?: number
+  page?: number // ← Add
+  limit?: number // ← Add
 }
 
 export interface MentorsResponse {
   mentors: Mentor[]
   count: number
   page: number
+  totalPages: number
 }
 
 // DB team will replace this function with real DB queries
@@ -41,11 +44,16 @@ export async function findMentors(filters: MentorFilters): Promise<MentorsRespon
   if (filters.maxPrice) {
     mentors = mentors.filter(m => m.rate <= filters.maxPrice!)
   }
+  const page = filters.page || 1
+  const limit = filters.limit || 6 // 6 cards per page
+  const startIndex = (page - 1) * limit
+  const paginatedMentors = mentors.slice(startIndex, startIndex + limit)
 
   return {
-    mentors,
-    count: mentors.length,
-    page: 1
+    mentors: paginatedMentors,
+    count: mentors.length, // total count before pagination
+    page,
+    totalPages: Math.ceil(mentors.length / limit)
   }
 }
 
