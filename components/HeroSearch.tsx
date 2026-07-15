@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation'
 import { MapPin, Search, Sparkles } from 'lucide-react'
 import { Area, Subject } from '@/types/mentor'
 
-const HYD_AREAS: Area[] = ['Gachibowli', 'Hitech City', 'Madhapur', 'Kondapur', 'Kukatpally', 'Ameerpet', 'Secunderabad', 'Jubilee Hills', 'Miyapur', 'Dilsukhnagar']
-const SUBJECTS: Subject[] = ['CBSE Math', 'JEE Physics', 'NEET Biology', 'Spoken English', 'Coding', 'UPSC', 'Class 10 Science', 'Interview Prep']
+const HYD_AREAS: Area[] = ['Gachibowli', 'Hitech City', 'Madhapur', 'Kondapur', 'Dilsukhnagar']
+const SUBJECTS: Subject[] = ['CBSE Math', 'JEE Physics', 'NEET Biology', 'Coding']
 
 export default function HeroSearch() {
   const [subject, setSubject] = useState<Subject | ''>('')

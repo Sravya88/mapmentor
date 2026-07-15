@@ -9,8 +9,7 @@ export type Subject =
   | 'English'
   | 'IELTS'
 
-export type Area = 'Gachibowli' | 'Kondapur' | 'Madhapur' | 'Hitech City' | 'Dilsukhnagar'
-
+export type Area = 'Gachibowli' | 'Hitech City' | 'Madhapur' | 'Kondapur'  | 'Dilsukhnagar'
 export interface Mentor {
   id: string
   name: string
