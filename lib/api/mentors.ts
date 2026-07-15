@@ -64,3 +64,18 @@ export async function findMentors(filters: MentorFilters): Promise<MentorsRespon
     totalPages: Math.ceil((count || 0) / limit)
   }
 }
+
+export async function findMentorById(id: string): Promise<Mentor | null> {
+  const { data, error } = await supabase
+    .from('mentors')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Supabase error:', error)
+    return null
+  }
+
+  return data as Mentor
+}
