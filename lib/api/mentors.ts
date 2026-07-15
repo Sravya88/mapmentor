@@ -1,13 +1,13 @@
+import { supabase } from '@/lib/supabase'
 import { Mentor, Subject, Area } from '@/types/mentor'
 
-// This file is the "contract" with DB team. They'll replace getMockData() later.
 export interface MentorFilters {
-  subject?: Subject
+  subject?: Subject | Subject[]
   area?: Area
   minRating?: number
   maxPrice?: number
-  page?: number // ← Add
-  limit?: number // ← Add
+  page?: number
+  limit?: number
 }
 
 export interface MentorsResponse {
@@ -17,47 +17,50 @@ export interface MentorsResponse {
   totalPages: number
 }
 
-// DB team will replace this function with real DB queries
-async function getMockData(): Promise<Mentor[]> {
-  // Simulate network delay like a real DB
-  await new Promise(resolve => setTimeout(resolve, 300))
-
-  const { mockMentors } = await import('@/lib/mockMentors')
-  return mockMentors
-}
-
 export async function findMentors(filters: MentorFilters): Promise<MentorsResponse> {
-  let mentors = await getMockData()
+  let query = supabase.from('mentors').select('*', { count: 'exact' })
 
+  // Subject filter - check if array contains the subject
   if (filters.subject) {
-    mentors = mentors.filter(m => m.subjects.includes(filters.subject!))
+    const subjects = Array.isArray(filters.subject) ? filters.subject : [filters.subject]
+    query = query.overlaps('subjects', subjects)
   }
 
+  
+
   if (filters.area) {
-    mentors = mentors.filter(m => m.area === filters.area)
+    query = query.eq('area', filters.area)
   }
 
   if (filters.minRating) {
-    mentors = mentors.filter(m => m.rating >= filters.minRating!)
+    query = query.gte('rating', filters.minRating)
   }
 
   if (filters.maxPrice) {
-    mentors = mentors.filter(m => m.rate <= filters.maxPrice!)
+    query = query.lte('rate', filters.maxPrice)
   }
+
+  // Pagination
   const page = filters.page || 1
-  const limit = filters.limit || 6 // 6 cards per page
+  const limit = filters.limit || 6
   const startIndex = (page - 1) * limit
-  const paginatedMentors = mentors.slice(startIndex, startIndex + limit)
+  query = query.range(startIndex, startIndex + limit - 1)
+
+  // Default sort by rating desc
+  query = query.order('rating', { ascending: false })
+
+  const { data, error, count } = await query
+  console.log('Fetched from Supabase:', count, 'mentors')
+
+  if (error) {
+    console.error('Supabase error:', error)
+    throw new Error('Failed to fetch mentors')
+  }
 
   return {
-    mentors: paginatedMentors,
-    count: mentors.length, // total count before pagination
+    mentors: data as Mentor[],
+    count: count || 0,
     page,
-    totalPages: Math.ceil(mentors.length / limit)
+    totalPages: Math.ceil((count || 0) / limit)
   }
-}
-
-export async function findMentorById(id: string): Promise<Mentor | null> {
-  const mentors = await getMockData()
-  return mentors.find(m => m.id === id) || null
 }
