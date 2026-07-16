@@ -66,8 +66,9 @@ export default function SearchPage() {
             Mentors for {subject || 'All Subjects'} in {area || 'Hyderabad'}
           </h1>
           <p className="text-gray-600 mt-2">
-            {loading ? 'Searching...' : `${mentors.length} mentors found`}
+            if (loading) return <div className="grid md:grid-cols-3 gap-4 p-6">{[1,2,3,4,5,6].map(i=><div key={i} className="h-40 bg-gray-200 animate-pulse rounded" />)}</div>
           </p>
+          if (mentors.length===0) return <div className="text-center p-20">No mentors in {area} - Try another area</div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">

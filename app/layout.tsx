@@ -5,10 +5,10 @@ import Navbar from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "MapMentor - Find Real Mentors Near You",
-  description: "AI-powered mentor matching in Hyderabad",
-};
+export const metadata = {
+  title: 'MapMentor - Find Real Tutors Near You in Hyderabad',
+  description: 'Find verified tutors in Gachibowli, Hitech City, Madhapur. JEE, NEET, CBSE, Coding mentors near you. 500+ mentors.',
+}
 
 export default function RootLayout({
   children,
