@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { use } from 'react'
+import Image from 'next/image'
+
 
 export default function MentorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params) // FIX: unwrap Promise
@@ -28,8 +30,10 @@ export default function MentorPage({ params }: { params: Promise<{ id: string }>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-8 mt-6 shadow-sm">
           <div className="flex gap-6">
-            <img
+            <Image
               src={mentor.photo_url || mentor.image || `https://i.pravatar.cc/150?u=${mentor.id}`}
+              width={96}
+              height={96}
               className="w-24 h-24 rounded-full object-cover border border-gray-200"
               alt={mentor.name}
             />

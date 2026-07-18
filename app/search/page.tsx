@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const AREAS = ['All','Gachibowli','Hitech City','Madhapur','Kondapur','Kukatpally','Ameerpet','Secunderabad','Dilsukhnagar']
 const SUBJECTS = ['All','CBSE Math','JEE Math','NEET Biology','Physics','Chemistry','Spoken English','Coding','UPSC']
@@ -85,8 +86,13 @@ export default function SearchPage() {
           {filtered.map(m => (
             <div key={m.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
               <div className="flex gap-4">
-                <img src={m.photo_url || m.image || `https://i.pravatar.cc/150?u=${m.id}`} alt={m.name} className="w-14 h-14 rounded-full object-cover border" />
-                <div className="flex-1">
+                <Image 
+                  src={m.photo_url || m.image || `https://i.pravatar.cc/150?u=${m.id}`} 
+                  alt={m.name}
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 rounded-full object-cover border"
+                />                <div className="flex-1">
                   {/* FIX: text-gray-900 font-bold - NOT light gray */}
                   <h3 className="font-bold text- text-gray-900 leading-tight">{m.name}</h3>
                   <p className="text- font-medium text-gray-700 mt-1">📍 {m.area} • {m.distance_km || 2.5} km</p>
