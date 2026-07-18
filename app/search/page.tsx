@@ -1,167 +1,118 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Mentor, Subject, Area } from '@/types/mentor'
-import MentorCard from '@/components/MentorCard'
-import MentorCardSkeleton from '@/components/MentorCardSkeleton'
+import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+
+const AREAS = ['All','Gachibowli','Hitech City','Madhapur','Kondapur','Kukatpally','Ameerpet','Secunderabad','Dilsukhnagar']
+const SUBJECTS = ['All','CBSE Math','JEE Math','NEET Biology','Physics','Chemistry','Spoken English','Coding','UPSC']
 
 export default function SearchPage() {
-  const searchParams = useSearchParams()
-  const subject = searchParams.get('subject')
-  const area = searchParams.get('area')
-
-  const [mentors, setMentors] = useState<Mentor[]>([])
+  const [mentors, setMentors] = useState<any[]>([])
+  const [filtered, setFiltered] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  
-  const [sortBy, setSortBy] = useState<'rating' | 'price' | 'distance'>('rating')
-  const [maxPrice, setMaxPrice] = useState<number | null>(null)
-  const [minRating, setMinRating] = useState<number | null>(null)
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [subject, area, maxPrice, minRating])
+  const [search, setSearch] = useState('')
+  const [area, setArea] = useState('All')
+  const [subject, setSubject] = useState('All')
+  const [maxRate, setMaxRate] = useState(2000)
 
   useEffect(() => {
     const fetchMentors = async () => {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (subject) params.set('subject', subject)
-      if (area) params.set('area', area)
-      if (maxPrice) params.set('maxPrice', maxPrice.toString())
-      if (minRating) params.set('minRating', minRating.toString())
-      params.set('page', page.toString())
-      params.set('limit', '6')
-
-      try {
-        const res = await fetch(`/api/mentors?${params.toString()}`)
-        const data = await res.json()
-        setMentors(data.mentors || [])
-        setTotalPages(data.totalPages || 1)
-      } catch (error) {
-        console.error('Failed to fetch:', error)
-        setMentors([])
-      } finally {
-        setLoading(false)
+      const { data } = await supabase.from('mentors').select('*').order('created_at', { ascending: false })
+      if (data) {
+        setMentors(data)
+        setFiltered(data)
       }
+      setLoading(false)
     }
-
     fetchMentors()
-  }, [subject, area, page, maxPrice, minRating])
+  }, [])
 
-  const sortedMentors = [...mentors].sort((a, b) => {
-    if (sortBy === 'rating') return b.rating - a.rating
-    if (sortBy === 'price') return a.rate - b.rate
-    if (sortBy === 'distance') return a.distance_km - b.distance_km
-    return 0
-  })
+  useEffect(() => {
+    let result = [...mentors]
+    if (search) {
+      result = result.filter(m =>
+        m.name?.toLowerCase().includes(search.toLowerCase()) ||
+        m.subjects?.join(' ').toLowerCase().includes(search.toLowerCase())
+      )
+    }
+    if (area!== 'All') result = result.filter(m => m.area?.toLowerCase().includes(area.toLowerCase()))
+    if (subject!== 'All') result = result.filter(m => m.subjects?.some((s:string) => s.toLowerCase().includes(subject.toLowerCase())))
+    result = result.filter(m => (m.rate || 0) <= maxRate)
+    setFiltered(result)
+  }, [search, area, subject, maxRate, mentors])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Mentors for {subject || 'All Subjects'} in {area || 'Hyderabad'}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            if (loading) return <div className="grid md:grid-cols-3 gap-4 p-6">{[1,2,3,4,5,6].map(i=><div key={i} className="h-40 bg-gray-200 animate-pulse rounded" />)}</div>
-          </p>
-          if (mentors.length===0) return <div className="text-center p-20">No mentors in {area} - Try another area</div>
+    <div className="min-h-screen bg-[#f8fafc]">
+      {/* Header - HIGH CONTRAST */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <Link href="/" className="font-black text-xl text-gray-900 tracking-tight">MapMentor</Link>
+          <div className="flex gap-3 items-center">
+            <Link href="/search" className="text-sm font-semibold text-gray-900">Browse Mentors</Link>
+            <Link href="/admin" className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold">Become a Mentor</Link>
+          </div>
         </div>
+      </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="rating">Rating</option>
-                <option value="price">Price: Low to High</option>
-                <option value="distance">Distance</option>
-              </select>
-            </div>
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        {/* Search - DARK TEXT */}
+        <form onSubmit={e => e.preventDefault()}>
+          <input
+            placeholder="Search math, physics, coding..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full p-4 rounded-2xl border border-gray-300 bg-white text- font-medium text-gray-900 placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-black focus:border-black"
+          />
+        </form>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={maxPrice || ''}
-                onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : null)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">Any Price</option>
-                <option value="500">Under ₹500/hr</option>
-                <option value="800">Under ₹800/hr</option>
-                <option value="1000">Under ₹1000/hr</option>
-              </select>
-
-              <select
-                value={minRating || ''}
-                onChange={(e) => setMinRating(e.target.value ? Number(e.target.value) : null)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">Any Rating</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="4.8">4.8+ Stars</option>
-              </select>
-
-              {(maxPrice || minRating) && (
-                <button
-                  onClick={() => { setMaxPrice(null); setMinRating(null) }}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
+        {/* Filters - DARK */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <select value={area} onChange={e => setArea(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-300 bg-white text-gray-900 font-medium text-">
+            {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <select value={subject} onChange={e => setSubject(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-300 bg-white text-gray-900 font-medium text-">
+            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <div className="w-full bg-white border border-gray-300 rounded-xl p-3.5 flex items-center gap-3">
+            <span className="text- font-bold text-gray-900 whitespace-nowrap">Max ₹{maxRate}</span>
+            <input type="range" min={300} max={2000} step={100} value={maxRate} onChange={e => setMaxRate(Number(e.target.value))} className="flex-1 accent-black" />
           </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => <MentorCardSkeleton key={i} />)}
-          </div>
-        ) : sortedMentors.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedMentors.map((mentor) => (
-                <MentorCard key={mentor.id} mentor={mentor} />
-              ))}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                
-                <span className="text-sm text-gray-600">
-                  Page {page} of {totalPages}
-                </span>
-                
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
+        {/* Results */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-8">
+          {filtered.map(m => (
+            <div key={m.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex gap-4">
+                <img src={m.photo_url || m.image || `https://i.pravatar.cc/150?u=${m.id}`} alt={m.name} className="w-14 h-14 rounded-full object-cover border" />
+                <div className="flex-1">
+                  {/* FIX: text-gray-900 font-bold - NOT light gray */}
+                  <h3 className="font-bold text- text-gray-900 leading-tight">{m.name}</h3>
+                  <p className="text- font-medium text-gray-700 mt-1">📍 {m.area} • {m.distance_km || 2.5} km</p>
+                  <p className="text- font-bold text-gray-900 mt-0.5">⭐ {m.rating || 4.8} • {m.experience || 3} yrs</p>
+                </div>
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No mentors found</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your filters</p>
-          </div>
-        )}
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                {m.subjects?.slice(0,2).map((s:string) => (
+                  <span key={s} className="text- font-bold bg-gray-900 text-white px-3 py-1 rounded-full">{s}</span>
+                ))}
+              </div>
+
+              <p className="text- font-medium text-gray-800 mt-3 line-clamp-2 leading-snug">{m.bio || 'Experienced tutor with proven results'}</p>
+
+              <div className="flex justify-between items-center mt-4 border-t border-gray-100 pt-3">
+                <div className="font-black text- text-gray-900">₹{m.rate}<span className="font-medium text- text-gray-600">/hr</span></div>
+                <div className="text- font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">{m.availability || 'Weekdays'}</div>
+              </div>
+
+              <Link href={`/mentor/${m.id}`} className="block w-full text-center bg-gray-900 text-white py-3 rounded-xl mt-4 font-bold text- hover:bg-black">
+                View Profile
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

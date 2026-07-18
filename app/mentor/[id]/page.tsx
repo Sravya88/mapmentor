@@ -1,110 +1,74 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import { Mentor } from '@/types/mentor'
-import { Star, MapPin, ArrowLeft, Award, Clock } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { use } from 'react'
 
-type Props = {
-  params: Promise<{ id: string }> // Next.js 15: params is also async
-}
-
-export default function MentorProfile() {
-  const params = useParams()
-  const [mentor, setMentor] = useState<Mentor | null>(null)
+export default function MentorPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params) // FIX: unwrap Promise
+  const [mentor, setMentor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/mentors/${params.id}`)
-     .then(res => res.json())
-     .then(data => setMentor(data))
-     .finally(() => setLoading(false))
-  }, [params.id])
+    const fetchMentor = async () => {
+      const { data } = await supabase.from('mentors').select('*').eq('id', id).single()
+      setMentor(data)
+      setLoading(false)
+    }
+    fetchMentor()
+  }, [id])
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>
-  if (!mentor) return <div className="p-8 text-center">Mentor not found</div>
-
+  if (loading) return <div className="p-10 text-center font-bold text-gray-900">Loading...</div>
+  if (!mentor) return <div className="p-10 text-center">Mentor not found</div>
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Link href="/search" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6">
-          <ArrowLeft size={20} />
-          Back to results
-        </Link>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="shrink-0">
-              <img 
-                src={mentor.photo_url} 
-                alt={mentor.name}
-                className="w-32 h-32 rounded-full object-cover"
-              />
-            </div>
-            
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">{mentor.name}</h1>
-              
-              <div className="flex items-center gap-4 mt-3 text-gray-600">
-                <div className="flex items-center gap-1">
-                  <MapPin size={18} />
-                  <span>{mentor.area} • {mentor.distance_km} km away</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star size={18} className="fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">{mentor.rating}</span>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 mt-4">
-                {mentor.badges.map(badge => (
-                  <span key={badge} className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-full flex items-center gap-1">
-                    <Award size={14} />
-                    {badge}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="mt-6">
-                <h2 className="font-semibold text-lg text-gray-900 mb-2">Teaches</h2>
-                <div className="flex flex-wrap gap-2">
-                  {mentor.subjects.map(subject => (
-                    <span key={subject} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-lg">
-                      {subject}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-100">
-                <h2 className="font-semibold text-orange-900 mb-1">Why AI matched you</h2>
-                <p className="text-orange-800">{mentor.ai_match_reason}</p>
-              </div>
-            </div>
-            
-            <div className="md:w-64 shrink-0">
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 sticky top-24">
-                <p className="text-3xl font-bold text-gray-900">₹{mentor.rate}</p>
-                <p className="text-gray-600 mb-4">per hour</p>
-                
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
-                  Book a Session
-                </button>
-                
-                <button className="w-full mt-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-lg transition">
-                  Message
-                </button>
-                
-                <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={16} />
-                  <span>Usually responds in 1 hour</span>
-                </div>
-              </div>
+    <div className="min-h-screen bg-[#f8fafc]">
+      <div className="max-w-3xl mx-auto p-6">
+        <Link href="/search" className="text-sm font-bold text-gray-900 hover:underline">← Back to search</Link>
+
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 mt-6 shadow-sm">
+          <div className="flex gap-6">
+            <img
+              src={mentor.photo_url || mentor.image || `https://i.pravatar.cc/150?u=${mentor.id}`}
+              className="w-24 h-24 rounded-full object-cover border border-gray-200"
+              alt={mentor.name}
+            />
+            <div>
+              <h1 className="text-3xl font-black text-gray-900">{mentor.name}</h1>
+              <p className="text- font-medium text-gray-700 mt-1">📍 {mentor.area} • {mentor.education || 'B.Tech'}</p>
+              <p className="text- font-bold text-gray-900 mt-2">₹{mentor.rate}/hr • {mentor.experience || 3} yrs • ⭐ {mentor.rating || 4.8}</p>
             </div>
           </div>
+
+          <div className="mt-8">
+            <h3 className="font-black text-gray-900 text-">About</h3>
+            <p className="text- font-medium text-gray-800 mt-2 leading-relaxed">
+              {mentor.bio || 'Experienced tutor with proven track record helping students achieve top ranks in CBSE, JEE and NEET.'}
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {mentor.subjects?.map((s:string) => (
+              <span key={s} className="bg-gray-900 text-white px-4 py-1.5 rounded-full text- font-bold">{s}</span>
+            ))}
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-4 text-sm">
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <div className="text-gray-500 font-medium">Availability</div>
+              <div className="font-bold text-gray-900 mt-1">{mentor.availability || 'Weekdays, Evenings'}</div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <div className="text-gray-500 font-medium">Mode</div>
+              <div className="font-bold text-gray-900 mt-1">{mentor.mode || 'Home + Online'}</div>
+            </div>
+          </div>
+
+          <button className="w-full bg-gray-900 text-white py-4 rounded-xl mt-8 font-black text-">
+            Contact {mentor.name.split(' ')[0]} — ₹{mentor.rate}/hr
+          </button>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
