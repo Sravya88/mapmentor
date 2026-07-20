@@ -45,17 +45,6 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
-      {/* Header - HIGH CONTRAST */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="font-black text-xl text-gray-900 tracking-tight">MapMentor</Link>
-          <div className="flex gap-3 items-center">
-            <Link href="/search" className="text-sm font-semibold text-gray-900">Browse Mentors</Link>
-            <Link href="/admin" className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold">Become a Mentor</Link>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Search - DARK TEXT */}
         <form onSubmit={e => e.preventDefault()}>
